@@ -1,0 +1,12 @@
+keedger8r
+*.cmx
+*.cmi
+*.cmt
+*.cmti
+*.o
+*~
+test*
+*.md
+Lexer.ml
+Parser.mli
+Parser.ml
