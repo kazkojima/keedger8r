@@ -1061,9 +1061,12 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; ""
     ; "    size_t input_buffer_offset = 0;"
     ; "    size_t output_buffer_offset = 0;"
+    ; "    size_t input_buffer_size = 0;"
+    ; "    size_t output_buffer_size = 0;"
     ; "    EDGE_ADD_SIZE(input_buffer_offset, sizeof(*pargs_in));"
     ; sprintf "    EDGE_ADD_SIZE(output_buffer_offset, sizeof(%s_args_t));"
         fd.fname
+    ; "    EDGE_ADD_SIZE(input_buffer_size, args_len);"
     ; ""
     ; (* Input buffer validation *)
       "    /* Make sure input buffer is valid. */"
@@ -1075,9 +1078,6 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; (* Prepare in and in-out parameters *)
       edge_gen_in_and_inout_setters fd.plist
     ; ""
-    ; (* Prepare out and in-out parameters. The in-out parameter is copied to output buffer. *)
-      edge_gen_out_and_inout_setters fd.plist
-    ; ""
     ; (* Prepare output buffer *)
       "    /* Prepare output buffer. */"
     ; "    void *output_buffer = malloc(output_buffer_offset);"
@@ -1088,6 +1088,9 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "        _result = EDGE_OUT_OF_MEMORY;"
     ; "        goto done;"
     ; "    }"
+    ; ""
+    ; (* Prepare out and in-out parameters. The in-out parameter is copied to output buffer. *)
+      edge_gen_out_and_inout_setters fd.plist
     ; ""
     ; sprintf "    pargs_out = (%s_args_t*)output_buffer;" fd.fname
     ; ""
@@ -1132,8 +1135,8 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "#define " ^ guard
     ; ""
     ; "#include \"eapp_utils.h\""
-    ; ""
     ; "#include \"edge_call.h\""
+    ; "#include \"syscall.h\""
     ; ""
     ; "#include \"edger_macros.h\""
     ; ""
@@ -1161,6 +1164,11 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "#include <wchar.h>"
     ; ""
     ; "EDGE_EXTERNC_BEGIN"
+    ; ""
+    ; "void edge_init(){"
+    ; "  /* Nothing for now, will probably register buffers/callsites"
+    ; "     later */"
+    ; "}"
     ; ""
     ; "/**** OCALL function wrappers. ****/"
     ; ""
@@ -1203,7 +1211,7 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
       else ["/* There were no ocalls. */"]
     in
     let edge_gen_ocall_table =
-      [ sprintf "static edge_ocall_func_t __%s_ocall_function_table[] = {"
+      [ sprintf "edge_ocall_func_t __%s_ocall_function_table[] = {"
           ec.enclave_name
       ; "    "
         ^ String.concat "\n    "
@@ -1229,18 +1237,6 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "/**** OCALL function table. ****/"
     ; ""
     ; String.concat "\n" edge_gen_ocall_table
-    ; ""
-    ; sprintf "int edge_init(Keystone* enclave)"
-    ; "{"
-    ; "    registerOcallDispatch(incoming_call_dispatch);"
-    ; "    edge_ocall_func_t *func = __test_ocall_function_table;"
-    ; "    int id = 1;"
-    ; "    while (*func) {"
-    ; "        register_call(id++, *func++);"
-    ; "    }"
-    ; "    edge_call_init_internals((uintptr_t)enclave->getSharedBuffer(),"
-    ; "                             enclave->getSharedBufferSize());"
-    ; "}"
     ; ""
     ; "EDGE_EXTERNC_END"
     ; "" ]
