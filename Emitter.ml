@@ -1062,7 +1062,6 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "    size_t input_buffer_offset = 0;"
     ; "    size_t output_buffer_offset = 0;"
     ; "    size_t input_buffer_size = 0;"
-    ; "    size_t output_buffer_size = 0;"
     ; "    EDGE_ADD_SIZE(input_buffer_offset, sizeof(*pargs_in));"
     ; sprintf "    EDGE_ADD_SIZE(output_buffer_offset, sizeof(%s_args_t));"
         fd.fname
@@ -1080,7 +1079,7 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; ""
     ; (* Prepare output buffer *)
       "    /* Prepare output buffer. */"
-    ; "    void *output_buffer = malloc(output_buffer_offset);"
+    ; "    void *output_buffer = edge_call_data_ptr();"
     ; ""
     ; (* Output buffer validation *)
       "    /* Make sure output buffer is valid. */"
@@ -1101,10 +1100,14 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; ( if uf.uf_propagate_errno then "    pargs_out->_ocall_errno = errno;"
       else "    /* Errno propagation not enabled. */" )
     ; ""
-    ; "    /* This handles wrapping the data into an edge_data_t and"
-    ; "       storing it in the shared region. */"
-    ; "    if (edge_call_setup_wrapped_ret(edge_call, output_buffer,"
-    ; "                                    output_buffer_offset)) {"
+    ; "    /* Check the validity of output_buffer. */"
+    ; "    if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset) {"
+    ; "        _result = EDGE_BAD_OFFSET;"
+    ; "        goto done;"
+    ; "    }"
+    ; ""
+    ; "    if (edge_call_setup_ret(edge_call, output_buffer,"
+    ; "                            output_buffer_offset)) {"
     ; "        _result = EDGE_BAD_PTR;"
     ; "    } else {"
     ; "        _result = EDGE_OK;"
