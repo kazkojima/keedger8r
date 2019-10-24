@@ -1,5 +1,44 @@
+/*
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (C) 2019 National Institute of Advanced Industrial Science
+ *                           and Technology (AIST)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* Keystone version of edger macros for generated wrappers. */
+
 #ifndef EDGER_MACROS_H
 #define EDGER_MACROS_H
+
+#include <stddef.h>
+#include "edge_call.h"
+
+#define EDGE_ENUM_MAX 255
+typedef int edge_result_t;
+typedef void (*edge_ocall_func_t)(void*);
 
 // Error numbers
 #define EDGE_OK			CALL_STATUS_OK
@@ -14,8 +53,7 @@
 #if defined(__cplusplus)
 #define EDGE_EXTERNC extern "C"
 #define EDGE_EXTERNC_BEGIN \
-    extern "C"           \
-    {
+    extern "C" {
 #define EDGE_EXTERNC_END }
 #else
 #define EDGE_EXTERNC
@@ -25,17 +63,16 @@
 
 #define EDGE_BUFFER_ALIGN (2*sizeof(void*))
 
-inline edge_result_t
+static inline edge_result_t
 edge_add_size(size_t* total, size_t size)
 {
-  edge_result_t _result;
   size_t align = EDGE_BUFFER_ALIGN;
   size_t sum = 0;
   size_t round = ((size + align - 1) / align) * align;
   if (round < size)
     return EDGE_BAD_OFFSET;
   sum = *total + round;
-  ir (sum < *total)
+  if (sum < *total)
     return EDGE_BAD_OFFSET;
   *total = sum;
   return EDGE_OK;
@@ -68,7 +105,7 @@ edge_add_size(size_t* total, size_t size)
     if (pargs_in->argname) { \
       pargs_in->argname = (argtype)(output_buffer + output_buffer_offset); \
       EDGE_ADD_SIZE(output_buffer_offset, (size_t)(argsize)); \
-      if (output_buffer_offset > output_buffer_size) { \
+      if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset)) { \
         _result = EDGE_BAD_OFFSET; \
         goto done; \
       } \
@@ -81,7 +118,7 @@ edge_add_size(size_t* total, size_t size)
       argtype _p_in = (argtype)pargs_in->argname; \
       pargs_in->argname = (argtype)(output_buffer + output_buffer_offset); \
       EDGE_ADD_SIZE(output_buffer_offset, (size_t)argsize); \
-      if (output_buffer_offset > output_buffer_size) { \
+      if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset)) { \
         _result = EGGE_BAD_OFFSET; \
         goto done; \
       } \
@@ -131,4 +168,3 @@ edge_add_size(size_t* total, size_t size)
   } while (0)
 
 #endif // EDGER_MACROS_H
-
