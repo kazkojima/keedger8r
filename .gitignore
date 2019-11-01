@@ -6,7 +6,6 @@ keedger8r
 *.o
 *~
 test*
-*.md
 Lexer.ml
 Parser.mli
 Parser.ml
