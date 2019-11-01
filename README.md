@@ -6,4 +6,4 @@ keedger8r: An edger8r for Keystone Enclave
 Now Keystone has `keyedger` which is implemented from scratch. I'd like to push 
 keedger8r here as a record.
 
-The original license for the files from Edger8r and oeedger8r are keeped.
+The original licenses for the files from Edger8r and oeedger8r are keeped.
