@@ -29,11 +29,11 @@ Parser.cmx: Parser.cmi
 Parser.cmi: Parser.mli
 	ocamlopt -c -keep-locs -bin-annot -I . -o $@ $< 
 
-%.cmx: intel/%.ml
-	ocamlopt -c -bin-annot -I . -o $@ $< 
+%.cmi %.cmx: intel/%.ml
+	ocamlopt -c -bin-annot -I . -o $(filter %.cmx,$@) $< 
 
-%.cmx: %.ml
-	ocamlopt -c -bin-annot -I . -o $@ $< 
+%.cmi %.cmx: %.ml
+	ocamlopt -c -bin-annot -I . -o $(filter %.cmx,$@) $< 
 
 $(PROGRAM): $(CMXS)
 	ocamlopt $(LIB_CMXAS) $(CMXS) -o $(PROGRAM)
