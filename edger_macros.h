@@ -53,7 +53,8 @@ typedef void (*edge_ocall_func_t)(void*);
 #if defined(__cplusplus)
 #define EDGE_EXTERNC extern "C"
 #define EDGE_EXTERNC_BEGIN \
-    extern "C" {
+    extern "C"           \
+    {
 #define EDGE_EXTERNC_END }
 #else
 #define EDGE_EXTERNC
@@ -105,7 +106,8 @@ edge_add_size(size_t* total, size_t size)
     if (pargs_in->argname) { \
       pargs_in->argname = (argtype)(output_buffer + output_buffer_offset); \
       EDGE_ADD_SIZE(output_buffer_offset, (size_t)(argsize)); \
-      if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset)) { \
+      if (edge_call_check_ptr_valid((uintptr_t)output_buffer, \
+				    output_buffer_offset)) {  \
         _result = EDGE_BAD_OFFSET; \
         goto done; \
       } \
@@ -118,7 +120,8 @@ edge_add_size(size_t* total, size_t size)
       argtype _p_in = (argtype)pargs_in->argname; \
       pargs_in->argname = (argtype)(output_buffer + output_buffer_offset); \
       EDGE_ADD_SIZE(output_buffer_offset, (size_t)argsize); \
-      if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset)) { \
+      if (edge_call_check_ptr_valid((uintptr_t)output_buffer, \
+				    output_buffer_offset)) {  \
         _result = EGGE_BAD_OFFSET; \
         goto done; \
       } \
@@ -166,5 +169,17 @@ edge_add_size(size_t* total, size_t size)
       goto done; \
     } \
   } while (0)
+
+#if defined(EDGE_IGNORE_EGDE_RETURN)
+# define EDGE_RETURN_ARGP
+# define EDGE_SET_EDGE_RESULT(result)
+#else
+# define EDGE_RETURN_ARGP edge_return_t *_edge_return,
+
+# define EDGE_SET_EDGE_RESULT(result) \
+  do { \
+    *_edge_return = (result); \
+  } while (0)
+#endif
 
 #endif // EDGER_MACROS_H

@@ -1,12 +1,9 @@
 (* Copyright (c) Microsoft Corporation. All rights reserved.
    Licensed under the MIT License. *)
 
-(** This module is Open Enclave's plugin for Intel's Edger8r, allowing
-    us to share the same Enclave Definition Language, but emit our
-    SDK's bindings. *)
-
-(** This is a modified version for Keystone Enclave SDK, based on Open
-    Enclave's implementation of their plugin. *)
+(** This module is a plugin for Intel's Edger8r to generate edge routines
+    for Keystone Enclave SDK, based on Open Enclave's implementation of
+    their plugin. *)
 
 open Ast
 open Plugin
@@ -249,18 +246,12 @@ let edge_gen_prototype (fd : func_decl) =
     add an [edge_enclave_t*] first parameter. *)
 let edge_gen_wrapper_prototype (fd : func_decl) =
   let plist_str =
-    let args =
-      [ ( match fd.rtype with
-        | Void -> []
-        | _ -> [get_tystr fd.rtype ^ "* _retval"] )
-      ; List.map gen_parm_str fd.plist ]
-      |> List.flatten
-    in
+    let args = List.map gen_parm_str fd.plist in
     match args with
     | [arg] -> arg
     | _ -> "\n    " ^ String.concat ",\n    " args
   in
-  sprintf "edge_result_t %s(%s)" fd.fname plist_str
+  sprintf "%s %s(EDGE_RETURN_ARGP %s)" (get_tystr fd.rtype) fd.fname plist_str
 
 (** Emit [struct], [union], or [enum]. *)
 let emit_composite_type =
@@ -870,7 +861,7 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "EDGE_ADD_SIZE(_output_buffer_offset, sizeof(*_pargs_out));"
     ; ""
     ; "/* Unmarshal return value and out, in-out parameters. */"
-    ; ( if fd.rtype <> Void then "*_retval = _pargs_out->_retval;"
+    ; ( if fd.rtype <> Void then "_retval = _pargs_out->_retval;"
       else "/* No return value. */" )
     ; gen_reset_ptr_index fd.plist
     ; edge_serialize_buffer_outputs fd.plist ]
@@ -990,6 +981,8 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     [ edge_gen_wrapper_prototype fd
     ; "{"
     ; "    edge_result_t _result = EDGE_FAILURE;"
+    ; ( if fd.rtype <> Void then "    " ^ (get_tystr fd.rtype) ^ " _retval;"
+	else "" )
     ; ""
     ; "    /* Marshalling struct. */"
     ; sprintf "    %s_args_t _args, *_pargs_in = NULL, *_pargs_out = NULL;"
@@ -1035,7 +1028,8 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; "done:"
     ; "    if (_buffer)"
     ; "        " ^ free_buffer ^ "(_buffer);"
-    ; "    return _result;"
+    ; "    EDGE_SET_EDGE_RESULT(_result);"
+    ; "    return _retval;"
     ; "}"
     ; "" ]
   in
@@ -1082,7 +1076,7 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
     ; ""
     ; (* Prepare output buffer *)
       "    /* Prepare output buffer. */"
-    ; "    void *output_buffer = edge_call_data_ptr();"
+    ; "    void *output_buffer = (void *)edge_call_data_ptr();"
     ; ""
     ; (* Output buffer validation *)
       "    /* Make sure output buffer is valid. */"
@@ -1104,7 +1098,8 @@ let gen_enclave_code (ec : enclave_content) (ep : edger8r_params) =
       else "    /* Errno propagation not enabled. */" )
     ; ""
     ; "    /* Check the validity of output_buffer. */"
-    ; "    if (edge_call_check_ptr_valid(output_buffer, output_buffer_offset)) {"
+    ; "    if (edge_call_check_ptr_valid((uintptr_t)output_buffer,"
+    ; "                                  output_buffer_offset)) {"
     ; "        _result = EDGE_BAD_OFFSET;"
     ; "        goto done;"
     ; "    }"
