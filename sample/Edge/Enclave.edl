@@ -1,0 +1,26 @@
+/* Sample edge definitions for keedger8r.  */
+
+/*
+  [in]: From Enclave to App.
+  [out]: From App to Enclave.
+  [string]: Specifies a NULL terminated buffer.
+ */
+
+enclave {
+
+    untrusted {
+        unsigned int ocall_print_string([in, string] const char *str);
+        int ocall_open_file([in, string] const char *name, int flags, int perm);
+        int ocall_close_file(int fdesc);
+        int ocall_read_file(int fdesc,
+	     		    [out, size=len] char *buf, unsigned int len);
+        int ocall_write_file(int fdesc,
+	     		     [in, size=len] const char *name, unsigned int len);
+    };
+
+    trusted {
+        /* Incall - ignored now, though edger8r requires at least one incall. */
+        public void incall_main(void);
+    };
+
+};

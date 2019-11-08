@@ -1,0 +1,14 @@
+*.o
+*~
+*_u.[ch]
+*_t.[ch]
+*_args.h
+*.fbs
+*_builder.h
+*_reader.h
+*_common.h
+*_eapp.h
+*_host.h
+*_verifier.h
+*.eapp_riscv
+app
