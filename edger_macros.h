@@ -170,16 +170,26 @@ edge_add_size(size_t* total, size_t size)
     } \
   } while (0)
 
-#if defined(EDGE_IGNORE_EGDE_RETURN)
+#if defined(EDGE_IGNORE_EGDE_RESULT)
 # define EDGE_RETURN_ARGP
 # define EDGE_SET_EDGE_RESULT(result)
 #else
-# define EDGE_RETURN_ARGP edge_return_t *_edge_return,
+# define EDGE_RETURN_ARGP edge_result_t *_edge_result,
 
 # define EDGE_SET_EDGE_RESULT(result) \
   do { \
-    *_edge_return = (result); \
+    *_edge_result = (result); \
   } while (0)
 #endif
+
+extern edge_ocall_func_t __Enclave_ocall_function_table[];
+
+static inline void register_functions(void)
+{
+  edge_ocall_func_t *func = __Enclave_ocall_function_table;
+  int id = 1;
+  while (*func)
+    register_call(id++, *func++);
+}
 
 #endif // EDGER_MACROS_H
