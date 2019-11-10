@@ -59,8 +59,7 @@ GENFILES=$(ENCLAVE_DIR)/$(EDGECALLS)_t.c $(ENCLAVE_DIR)/$(EDGECALLS)_t.h \
 	$(EDGE_DIR)/flatbuffers_common_reader.h
 
 gen:
-	export KEYEDGE_DIR=$EDGER_DIR
-	(cd $(EDGE_DIR); $(EDGER) $(EDGE_FILE))
+	(cd $(EDGE_DIR); KEYEDGE_DIR=$(EDGER_DIR) $(EDGER) $(EDGE_FILE))
 	(cd $(EDGE_DIR); $(EDGER_DIR)/flatcc/bin/flatcc -a $(EDGE_FILE:.h=.fbs))
 	echo $(ENC_T_C) > $(ENCLAVE_DIR)/$(EDGECALLS)_t.c
 	echo $(ENC_T_H) > $(ENCLAVE_DIR)/$(EDGECALLS)_t.h
